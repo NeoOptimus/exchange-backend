@@ -49,7 +49,7 @@ db: 'unknown',
 redis: 'unknown',
 timestamp: new Date().toISOString(),
 };
-
+const bcrypt = require('bcryptjs');
 // DB check
 try {
 await pool.query('select 1');
