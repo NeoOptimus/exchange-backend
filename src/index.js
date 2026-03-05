@@ -19,10 +19,21 @@ ssl: { rejectUnauthorized: false } // для managed Postgres обычно ок
 });
 
 // --- Redis (Upstash) ---
-const redis = new Redis(process.env.REDIS_URL || '', {
-lazyConnect: true,
+const Redis = require('ioredis');
+
+let redis = null;
+if (process.env.REDIS_URL) {
+redis = new Redis(process.env.REDIS_URL, {
 maxRetriesPerRequest: 1,
+enableReadyCheck: true,
+lazyConnect: false,
+tls: {}, // для rediss://
 });
+
+redis.on('error', (err) => {
+console.error('Redis error:', err.message);
+});
+}
 
 // root
 app.get('/', (req, res) => {
@@ -52,9 +63,7 @@ result.db_error = e.message;
 
 // Redis check
 try {
-if (redis.status !== 'ready') {
-await redis.connect();
-}
+if (!redis) throw new Error('REDIS_URL is missing');
 const pong = await redis.ping();
 result.redis = pong === 'PONG' ? 'ok' : 'fail';
 if (result.redis !== 'ok') result.ok = false;
