@@ -4,7 +4,6 @@ const cors = require('cors');
 require('dotenv').config();
 
 const { Pool } = require('pg');
-const Redis = require('ioredis');
 
 const app = express();
 app.use(cors());
