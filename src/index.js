@@ -62,7 +62,6 @@ result.db_error = e.message;
 }
 
 // Redis check
-// Redis check
 try {
 if (!redis) throw new Error('REDIS_URL is missing');
 const pong = await redis.ping();
