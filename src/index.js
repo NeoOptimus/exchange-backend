@@ -49,7 +49,7 @@ db: 'unknown',
 redis: 'unknown',
 timestamp: new Date().toISOString(),
 };
-const bcrypt = require('bcryptjs');
+
 // DB check
 try {
 await pool.query('select 1');
@@ -77,4 +77,45 @@ return res.status(result.ok ? 200 : 503).json(result);
 
 app.listen(port, '0.0.0.0', () => {
 console.log(`API started on port ${port}`);
+});
+
+app.post('/auth/register', async (req, res) => {
+try {
+const { email, phone, password } = req.body || {};
+
+if (!email || !phone || !password) {
+return res.status(400).json({
+error: 'email, phone, password are required'
+});
+}
+
+if (String(password).length < 8) {
+return res.status(400).json({
+error: 'password must be at least 8 chars'
+});
+}
+
+const passwordHash = await bcrypt.hash(password, 10);
+
+const q = `
+INSERT INTO users (email, phone, password_hash)
+VALUES ($1, $2, $3)
+RETURNING id, email, phone, email_verified, phone_verified, status, created_at
+`;
+const values = [String(email).toLowerCase().trim(), String(phone).trim(), passwordHash];
+const { rows } = await pool.query(q, values);
+
+return res.status(201).json({
+user: rows[0],
+email_verification_required: true,
+phone_verification_required: true
+});
+} catch (e) {
+// duplicate email/phone
+if (e.code === '23505') {
+return res.status(409).json({ error: 'email or phone already exists' });
+}
+console.error('register error:', e);
+return res.status(500).json({ error: 'internal_error' });
+}
 });
