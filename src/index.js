@@ -116,6 +116,6 @@ if (e.code === '23505') {
 return res.status(409).json({ error: 'email or phone already exists' });
 }
 console.error('register error:', e);
-return res.status(500).json({ error: 'internal_error' });
+return res.status(500).json({error: 'internal_error',detail: e.message,code: e.code || null});
 }
 });
