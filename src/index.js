@@ -194,3 +194,36 @@ console.error('login error:', e);
 return res.status(500).json({ error: 'internal_error', detail: e.message });
 }
 });
+
+function authRequired(req, res, next) {
+try {
+const auth = req.headers.authorization || '';
+const [type, token] = auth.split(' ');
+if (type !== 'Bearer' || !token) {
+return res.status(401).json({ error: 'unauthorized' });
+}
+
+const payload = jwt.verify(token, process.env.JWT_SECRET);
+req.user = payload;
+next();
+} catch (e) {
+return res.status(401).json({ error: 'unauthorized' });
+}
+}
+
+app.get('/me', authRequired, async (req, res) => {
+try {
+const { rows } = await pool.query(
+`SELECT id, email, phone, email_verified, phone_verified, status, created_at
+FROM users
+WHERE id = $1
+LIMIT 1`,
+[req.user.sub]
+);
+
+if (!rows[0]) return res.status(404).json({ error: 'user_not_found' });
+return res.json(rows[0]);
+} catch (e) {
+return res.status(500).json({ error: 'internal_error', detail: e.message });
+}
+});
